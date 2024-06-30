@@ -1,0 +1,10 @@
+[package]
+name = "camp-macro"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.82"
+darling = "0.20.8"
+syn = "2.0.62"
