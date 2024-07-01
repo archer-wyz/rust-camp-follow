@@ -43,7 +43,18 @@ async fn main() -> Result<()> {
 
     let addr = format!("[::1]:{}", 50052).parse().unwrap();
     info!("CRM service listening on {}", addr);
-    let svc = CrmServer::new(UserService);
+    let svc = CrmServer::with_interceptor(UserService {}, test_interceptor);
     Server::builder().add_service(svc).serve(addr).await?;
     Ok(())
+}
+
+fn test_interceptor(req: Request<()>) -> Result<Request<()>, Status> {
+    let metadata = req.metadata();
+    match metadata.get("authorization") {
+        Some(value) => {
+            info!("Authorization: {:?}", value);
+            Ok(req)
+        }
+        _ => Err(Status::unauthenticated("No authorization provided")),
+    }
 }
