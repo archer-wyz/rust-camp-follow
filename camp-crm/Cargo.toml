@@ -27,8 +27,11 @@ sqlx-db-tester = {workspace = true}
 fake = {workspace = true, optional = true}
 prost = {worksapce = true}
 prost-types = {workspace = true}
-nanoid = "0.4.0"
-rand = "0.8.5"
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+nanoid = {workspace = true}
+rand = {workspace = true}
 
 [build-dependencies]
 tonic-build = {workspace = true}
