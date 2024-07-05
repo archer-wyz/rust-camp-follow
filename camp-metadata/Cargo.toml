@@ -5,7 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
-name = "metadata-server"
+name = "server"
 path = "src/server.rs"
 
 [dependencies]
@@ -17,8 +17,8 @@ tokio = { workspace = true }
 tokio-stream = { workspace = true }
 futures = { workspace = true }
 fake = {workspace = true}
-prost = {workspace = true}
 prost-types = {workspace = true}
+prost = {workspace = true}
 camp-core = {workspace = true}
 rand = {workspace = true}
 anyhow = {workspace = true}

@@ -31,13 +31,13 @@ chrono = {workspace = true}
 sqlx = {workspace = true}
 sqlx-db-tester = {workspace = true}
 fake = {workspace = true, optional = true}
-prost = { worksapce = true }
-prost-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 nanoid = {workspace = true}
 rand = {workspace = true}
+prost-types = {workspace = true}
+prost = {workspace = true}
 
 [build-dependencies]
 tonic-build = {workspace = true}

@@ -11,6 +11,7 @@ nanoid = {workspace = true}
 rand = {workspace = true}
 chrono = {workspace = true}
 prost-types = {workspace = true}
+prost = {workspace = true}
 serde = {workspace = true}
 serde_yaml = {workspace = true}
 thiserror = {workspace = true}

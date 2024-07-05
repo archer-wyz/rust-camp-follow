@@ -241,6 +241,7 @@ dependencies = [
  "chrono",
  "fake",
  "nanoid",
+ "prost",
  "prost-types",
  "rand",
  "serde",
