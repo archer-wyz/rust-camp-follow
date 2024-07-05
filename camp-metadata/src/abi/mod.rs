@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use camp_core::core_fake::{before, Int, TimeStampBetween};
+use camp_core::core_fake::{before, Int, TimeStampBetween, VecFaker};
 use fake::{
     faker::{lorem::zh_cn::Sentence, name::zh_cn::Name},
     Dummy, Fake, Faker, Rng,
@@ -15,9 +15,13 @@ use crate::pb::metadata::{
     Publisher,
 };
 
-impl Publisher {
-    pub fn fake() -> Self {
-        todo!()
+impl Dummy<Faker> for Publisher {
+    fn dummy_with_rng<R: Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
+        Self {
+            id: 0,
+            name: Name().fake_with_rng(rng),
+            avatar: "https://fakeimg.pl/400x300/?text=i'm a publisher".to_string(),
+        }
     }
 }
 
@@ -41,7 +45,7 @@ impl Dummy<Faker> for Content {
             id: 0,
             name: Name().fake_with_rng(rng),
             description: Sentence(10..100).fake(),
-            publishers: vec![Publisher::fake()],
+            publishers: VecFaker(10).fake_with_rng(rng),
             r#type: Faker.fake(),
             created_at: TimeStampBetween(before(90), before(10)).fake_with_rng(rng),
             updated_at: TimeStampBetween(before(10), before(5)).fake_with_rng(rng),

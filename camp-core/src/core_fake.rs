@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use fake::{
     faker::{chrono::zh_cn::DateTimeBetween, internet::en::SafeEmail},
-    Dummy, Fake, Rng,
+    Dummy, Fake, Faker, Rng,
 };
 use nanoid::nanoid;
 use rand::thread_rng;
@@ -57,5 +57,17 @@ impl Dummy<TimeStampBetween> for prost_types::Timestamp {
             seconds: time.timestamp(),
             nanos: time.timestamp_subsec_nanos() as i32,
         }
+    }
+}
+
+pub struct VecFaker(pub usize);
+
+impl<T> Dummy<VecFaker> for Vec<T>
+where
+    T: Dummy<Faker>,
+{
+    fn dummy_with_rng<R: Rng + ?Sized>(config: &VecFaker, rng: &mut R) -> Self {
+        let len = config.0;
+        (0..len).map(|_| Faker.fake_with_rng(rng)).collect()
     }
 }
