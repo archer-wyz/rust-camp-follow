@@ -7,8 +7,13 @@ fn main() -> Result<()> {
     println!("Current directory: {:?}", dir);
     std::fs::create_dir_all("src/pb")?;
     let builder = tonic_build::configure();
-    builder
-        .out_dir("src/pb")
-        .compile(&["../protos/crm.proto"], &["../protos"])?;
+    builder.out_dir("src/pb").compile(
+        &[
+            "../protos/crm.proto",
+            "../protos/metadata/rpc.proto",
+            "../protos/metadata/messages.proto",
+        ],
+        &["../protos"],
+    )?;
     Ok(())
 }

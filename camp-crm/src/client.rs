@@ -5,7 +5,7 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let channel = Channel::from_static("http://[::1]:50052").connect().await?;
+    let channel = Channel::from_static("http://[::1]:50002").connect().await?;
     let mut client = CrmClient::with_interceptor(channel, test_interceptor);
     let request = Request::new(GetUserRequest { id: 1 });
     let user = client.get_user(request).await?;

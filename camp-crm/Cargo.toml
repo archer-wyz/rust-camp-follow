@@ -15,18 +15,24 @@ path = "src/server.rs"
 name = "client"
 path = "src/client.rs"
 
+[[bin]]
+name = "metadata"
+path = "src/metadata.rs"
+
 [dependencies]
 anyhow = {workspace = true}
 tonic = {workspace = true}
 tracing = {workspace = true}
 tracing-subscriber = {workspace = true}
 tokio = {workspace = true}
+tokio-stream = {workspace = true}
+futures = {workspace = true}
 chrono = {workspace = true}
 sqlx = {workspace = true}
 sqlx-db-tester = {workspace = true}
 fake = {workspace = true, optional = true}
-prost = {worksapce = true}
-prost-types = {workspace = true}
+prost = { worksapce = true }
+prost-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
