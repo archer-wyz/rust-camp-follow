@@ -243,6 +243,10 @@ dependencies = [
  "nanoid",
  "prost-types",
  "rand",
+ "serde",
+ "serde_yaml",
+ "thiserror",
+ "tracing-subscriber",
 ]
 
 [[package]]

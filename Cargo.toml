@@ -31,6 +31,7 @@ serde_yaml = "0.9"
 futures =  "0.3.30"
 nanoid = "0.4.0"
 rand = "0.8.5"
+thiserror = "1.0.61"
 
 camp-crm = { path = "camp-crm" }
 camp-core = { path = "camp-core" }
