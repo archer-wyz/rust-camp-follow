@@ -19,6 +19,8 @@ nanoid = "0.4.0"
 rand = "0.8.5"
 fake = {workspace = true}
 derive_builder = {workspace = true}
+thiserror = {workspace = true}
+camp-core = {workspace = true}
 
 [build-dependencies]
 tonic-build = {workspace = true}
