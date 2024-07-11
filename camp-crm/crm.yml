@@ -1,0 +1,5 @@
+grpc:
+  port: 50050
+  metadata: "http://localhost:50051"
+  user_stat: "http://localhost:50052"
+  notification: "http://localhost:50053"

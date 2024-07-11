@@ -7,10 +7,6 @@ edition = "2021"
 default = []
 local_utils = ["fake"]
 
-[[bin]]
-name = "metadata"
-path = "src/metadata.rs"
-
 [dependencies]
 anyhow = {workspace = true}
 tonic = {workspace = true}
@@ -30,9 +26,15 @@ nanoid = {workspace = true}
 rand = {workspace = true}
 prost-types = {workspace = true}
 prost = {workspace = true}
+derive_builder = {workspace = true}
+camp-core = {workspace = true}
+camp-metadata = {workspace = true}
+camp-notification = {workspace = true}
+camp-user-stat = {workspace = true}
 
 [build-dependencies]
 tonic-build = {workspace = true}
+proto-builder-trait = {workspace = true}
 anyhow = {workspace = true}
 
 [dev-dependencies]

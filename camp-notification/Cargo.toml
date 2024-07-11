@@ -1,0 +1,19 @@
+[package]
+name = "camp-notification"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+derive_builder = {workspace = true}
+tonic = {workspace = true}
+tokio = {workspace = true}
+tokio-stream = {workspace = true}
+prost-types = {workspace = true}
+prost = {workspace = true}
+
+[build-dependencies]
+tonic-build = {workspace = true}
+proto-builder-trait = {workspace = true}
+anyhow = {workspace = true}

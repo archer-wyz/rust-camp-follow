@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package crm;
+
+// user has registered X days ago
+message WelcomeRequest {
+  // interval for registered time
+  uint32 interval = 1;
+  //
+  repeated uint32 content_ids = 2;
+}
+
+message WelcomeResponse {
+  string id = 1;
+}
+
+// info of user last visited in X days and give the contents to watch
+message RecallRequest {
+  string id = 1;
+  uint32 last_visit_interval = 2;
+  uint32 last_watched_interval = 3;
+  repeated  uint32 content_ids = 4;
+}
+
+message RecallResponse {
+  string id = 1;
+}
+
+// info of user last visited but not finished in X days
+message RemindRequest {
+  string id = 1;
+  uint32 last_visit_interval = 2;
+}
+
+message RemindResponse {
+  string id = 1;
+}

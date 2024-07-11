@@ -1,5 +1,5 @@
 [workspace]
-members = ["camp-macro", "camp-crm", "camp-test", "camp-user-stat", "camp-metadata", "camp-core"]
+members = ["camp-macro", "camp-crm", "camp-test", "camp-user-stat", "camp-metadata", "camp-core", "camp-notification"]
 resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -37,3 +37,5 @@ proto-builder-trait = "0.6.1"
 camp-crm = { path = "camp-crm" }
 camp-core = { path = "camp-core" }
 camp-user-stat = {path = "camp-user-stat"}
+camp-metadata = {path = "camp-metadata"}
+camp-notification = {path = "camp-notification"}
