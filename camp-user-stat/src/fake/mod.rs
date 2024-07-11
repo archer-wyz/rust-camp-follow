@@ -1,10 +1,10 @@
-use crate::model::UserStat;
+use crate::model::{Gender, UserStat};
 use anyhow::Result;
-use camp_core::core_fake::{before, IntList, UniqueEmail};
+use camp_core::core_fake::{before, Int, IntList, UniqueEmail};
 use chrono::Utc;
 use fake::{
     faker::{chrono::zh_cn::DateTimeBetween, name::zh_cn::Name},
-    Dummy, Fake,
+    Dummy, Fake, Faker,
 };
 use std::{
     cmp::min,
@@ -18,6 +18,7 @@ impl Dummy<UserStatFaker> for UserStat {
         UserStat {
             email: UniqueEmail.fake_with_rng(rng),
             name: Name().fake_with_rng(rng),
+            gender: Faker.fake_with_rng(rng),
             viewed_but_not_started: IntList(1000, 100000, 200000).fake_with_rng(rng),
             recent_watched: IntList(1000, 100000, 200000).fake_with_rng(rng),
             started_but_not_finished: IntList(1000, 100000, 200000).fake_with_rng(rng),
@@ -33,6 +34,16 @@ impl Dummy<UserStatFaker> for UserStat {
 }
 
 pub struct UserStatFakerList(pub usize);
+
+impl Dummy<Faker> for Gender {
+    fn dummy_with_rng<R: rand::prelude::Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
+        match Int(0, 2).fake_with_rng(rng) {
+            0 => Gender::Female,
+            1 => Gender::Male,
+            _ => Gender::Unknown,
+        }
+    }
+}
 
 impl Dummy<UserStatFakerList> for Vec<UserStat> {
     fn dummy_with_rng<R: rand::Rng + ?Sized>(config: &UserStatFakerList, rng: &mut R) -> Self {
