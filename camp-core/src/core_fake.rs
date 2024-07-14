@@ -11,12 +11,21 @@ pub fn before(days: usize) -> DateTime<Utc> {
     now - chrono::Duration::days(days as i64)
 }
 
-pub struct UniqueEmail;
 const ALPHABET: [char; 36] = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
     'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
+pub struct PrefixUUID(pub &'static str);
+
+impl Dummy<PrefixUUID> for String {
+    fn dummy_with_rng<R: Rng + ?Sized>(config: &PrefixUUID, _rng: &mut R) -> Self {
+        let id = nanoid!(8, &ALPHABET);
+        format!("{}-{}", config.0, id)
+    }
+}
+
+pub struct UniqueEmail;
 impl Dummy<UniqueEmail> for String {
     fn dummy_with_rng<R: Rng + ?Sized>(_config: &UniqueEmail, rng: &mut R) -> Self {
         let email: String = SafeEmail().fake_with_rng(rng);
@@ -69,5 +78,31 @@ where
     fn dummy_with_rng<R: Rng + ?Sized>(config: &VecFaker, rng: &mut R) -> Self {
         let len = config.0;
         (0..len).map(|_| Faker.fake_with_rng(rng)).collect()
+    }
+}
+
+pub struct VecRanger<T> {
+    pub lower: usize,
+    pub upper: usize,
+    pub item: T,
+}
+
+impl<T, D> Dummy<VecRanger<D>> for Vec<T>
+where
+    T: Dummy<D>,
+{
+    fn dummy_with_rng<R: Rng + ?Sized>(config: &VecRanger<D>, rng: &mut R) -> Self {
+        let len = rng.gen_range(config.lower..config.upper);
+        (0..len)
+            .map(|_| Dummy::dummy_with_rng(&config.item, rng))
+            .collect()
+    }
+}
+
+pub fn vec_range_faker<T>(lower: usize, upper: usize, t: T) -> VecRanger<T> {
+    VecRanger {
+        lower,
+        upper,
+        item: t,
     }
 }

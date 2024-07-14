@@ -40,6 +40,8 @@ message InAppMessage {
   string title = 3;
   // body of the in-app message
   string body = 4;
+  // sender of the inapp
+  string sender = 5;
 }
 
 // request to send a message
@@ -52,10 +54,21 @@ message SendRequest {
   }
 }
 
+enum SendResponseType {
+  // message was successfully sent
+  SEND_RESPONSE_TYPE_SUCCESS = 0;
+  // message failed to send
+  SEND_RESPONSE_TYPE_FAILED = 1;
+  //
+  SEND_RESPONSE_TYPE_STORED = 2;
+}
+
 // response to a send request
 message SendResponse {
   // unique identifier of the message
   string message_id = 1;
   // timestamp of when the message was sent
   google.protobuf.Timestamp timestamp = 2;
+  // status of the message
+  SendResponseType status = 3;
 }

@@ -39,3 +39,4 @@ camp-core = { path = "camp-core" }
 camp-user-stat = {path = "camp-user-stat"}
 camp-metadata = {path = "camp-metadata"}
 camp-notification = {path = "camp-notification"}
+unimock = "0.6.6"
