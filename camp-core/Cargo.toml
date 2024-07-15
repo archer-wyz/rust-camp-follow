@@ -16,3 +16,5 @@ serde = {workspace = true}
 serde_yaml = {workspace = true}
 thiserror = {workspace = true}
 tracing-subscriber = {workspace = true}
+futures = {workspace = true}
+tonic = {workspace = true}

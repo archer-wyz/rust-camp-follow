@@ -240,6 +240,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "fake",
+ "futures",
  "nanoid",
  "prost",
  "prost-types",
@@ -247,6 +248,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "thiserror",
+ "tonic",
  "tracing-subscriber",
 ]
 
@@ -264,6 +266,7 @@ dependencies = [
  "derive_builder",
  "fake",
  "futures",
+ "itertools 0.13.0",
  "nanoid",
  "prost",
  "prost-types",
@@ -274,12 +277,16 @@ dependencies = [
  "serde_yaml",
  "sqlx",
  "sqlx-db-tester",
+ "thiserror",
  "tokio",
  "tokio-stream",
  "tonic",
  "tonic-build",
+ "tonic-mock",
  "tracing",
  "tracing-subscriber",
+ "unimock",
+ "uuid",
 ]
 
 [[package]]
@@ -301,6 +308,7 @@ dependencies = [
  "futures",
  "prost",
  "prost-types",
+ "proto-builder-trait",
  "rand",
  "serde",
  "serde_json",
@@ -2394,6 +2402,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "tonic-mock"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea9163cf065e21bf30e5ad1789bf334f5ae67e4a25f0e8200a7e375466e755ea"
+dependencies = [
+ "bytes",
+ "futures",
+ "http",
+ "http-body",
+ "prost",
+ "tonic",
+]
+
+[[package]]
 name = "tower"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2592,9 +2614,9 @@ checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "uuid"
-version = "1.9.1"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5de17fd2f7da591098415cff336e12965a28061ddace43b59cb3c430179c9439"
+checksum = "81dfa00651efa65069b0b6b651f4aaa31ba9e3c3ce0137aaad053604ee7e0314"
 dependencies = [
  "getrandom",
 ]

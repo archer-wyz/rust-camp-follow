@@ -40,3 +40,5 @@ camp-user-stat = {path = "camp-user-stat"}
 camp-metadata = {path = "camp-metadata"}
 camp-notification = {path = "camp-notification"}
 unimock = "0.6.6"
+uuid = "1.10.0"
+tonic-mock = "0.3.0"

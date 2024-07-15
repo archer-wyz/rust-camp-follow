@@ -26,3 +26,4 @@ anyhow = {workspace = true}
 [build-dependencies]
 tonic-build = {workspace = true}
 anyhow = {workspace = true}
+proto-builder-trait = {workspace = true}

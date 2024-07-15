@@ -5,7 +5,7 @@ edition = "2021"
 
 [features]
 default = []
-local_utils = ["fake"]
+test_utils = ["unimock", "tonic-mock"]
 
 [dependencies]
 anyhow = {workspace = true}
@@ -18,7 +18,7 @@ futures = {workspace = true}
 chrono = {workspace = true}
 sqlx = {workspace = true}
 sqlx-db-tester = {workspace = true}
-fake = {workspace = true, optional = true}
+fake = {workspace = true}
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
@@ -31,6 +31,11 @@ camp-core = {workspace = true}
 camp-metadata = {workspace = true}
 camp-notification = {workspace = true}
 camp-user-stat = {workspace = true}
+itertools = {workspace = true}
+thiserror = {workspace = true}
+uuid = {workspace = true}
+unimock = {workspace = true, optional = true}
+tonic-mock = {workspace = true, optional = true}
 
 [build-dependencies]
 tonic-build = {workspace = true}
@@ -38,4 +43,4 @@ proto-builder-trait = {workspace = true}
 anyhow = {workspace = true}
 
 [dev-dependencies]
-camp-crm = {workspace = true, features = ["fake"]}
+camp-crm = {workspace = true, features = ["test_utils"]}

@@ -102,3 +102,11 @@ impl Metadata for MetadataGRPC {
         ))
     }
 }
+
+pub struct Tpl<'a>(pub &'a [Content]);
+
+impl<'a> Tpl<'a> {
+    pub fn to_body(&self) -> String {
+        format!("Tpl: {:?}", self.0)
+    }
+}
