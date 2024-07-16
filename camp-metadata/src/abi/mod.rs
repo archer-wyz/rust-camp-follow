@@ -9,6 +9,7 @@ use futures::Stream;
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::{Request, Response, Status, Streaming};
+use tracing::info;
 
 use crate::pb::metadata::{
     metadata_server::Metadata, Content, ContentType, MaterializeRequest, MaterializeResponse,
@@ -73,33 +74,20 @@ impl Metadata for MetadataGRPC {
     ) -> ServiceResult<Self::MaterializeStream> {
         let mut stream = request.into_inner();
         let (tx, rx) = mpsc::channel(4);
+        info!("materialize");
         tokio::spawn(async move {
-            loop {
-                let sended = match stream.next().await {
-                    Some(Ok(request)) => {
-                        let resp = MaterializeResponse {
-                            id: request.id,
-                            content: Some(Faker.fake()),
-                        };
-                        tx.send(Ok(resp)).await
-                    }
-                    Some(Err(e)) => tx.send(Err(Status::invalid_argument(e.to_string()))).await,
-                    None => {
-                        tx.send(Err(Status::invalid_argument("No request provided")))
-                            .await
-                    }
+            while let Some(req) = stream.next().await {
+                let req = req.unwrap();
+                info!("req: {:?}", req);
+                let resp = MaterializeResponse {
+                    id: req.id,
+                    content: Some(Faker.fake()),
                 };
-                match sended {
-                    Ok(_) => {}
-                    Err(_) => break,
-                }
+                tx.send(Ok(resp)).await.unwrap();
             }
         });
-
         let output_stream = ReceiverStream::new(rx);
-        Ok(Response::new(
-            Box::pin(output_stream) as Self::MaterializeStream
-        ))
+        Ok(Response::new(Box::pin(output_stream)))
     }
 }
 

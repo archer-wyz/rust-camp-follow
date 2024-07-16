@@ -317,6 +317,8 @@ dependencies = [
  "tokio-stream",
  "tonic",
  "tonic-build",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
