@@ -325,9 +325,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "camp-core",
+ "camp-notification",
  "chrono",
  "derive_builder",
  "fake",
+ "futures",
  "prost",
  "prost-types",
  "proto-builder-trait",

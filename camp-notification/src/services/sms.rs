@@ -24,7 +24,7 @@ pub trait Sms: Send + Sync + 'static {
 pub fn return_sms_mock() -> Unimock {
     Unimock::new(MockSms::send_sms.each_call(matching!()).answers(&|_, msg| {
         let random = rand::random::<u8>();
-        if random % 2 == 0 {
+        if random % 10 != 0 {
             Ok(SendResponse {
                 id: msg.id,
                 timestamp: Utc::now(),

@@ -27,6 +27,10 @@ anyhow = {workspace = true}
 tracing = {workspace = true}
 tracing-subscriber = {workspace = true}
 unimock = {workspace = true}
+futures = {workspace = true}
+
+[dev-dependencies]
+camp-notification = {workspace = true, features = ["test_utils"]}
 
 [build-dependencies]
 tonic-build = {workspace = true}

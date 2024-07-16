@@ -2,7 +2,7 @@ CREATE TYPE message_type AS enum ('email', 'sms', 'inapp', 'unknown');
 
 -- Add migration script here
 CREATE TABLE messages (
-  id VARCHAR(64) PRIMARY KEY,
+  id VARCHAR(64) NOT NULL,
   type message_type DEFAULT 'unknown' NOT NULL,
   sender VARCHAR(64) NOT NULL,
   body TEXT NOT NULL,

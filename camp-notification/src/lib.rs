@@ -1,6 +1,8 @@
 use std::net::ToSocketAddrs as _;
 
-use abi::{NotificationGrpc, NotificationGrpcBuilder};
+use abi::{
+    email::EmailGrpc, inapp::InAppGrpc, sms::SmsGrpc, NotificationGrpc, NotificationGrpcBuilder,
+};
 use anyhow::Result;
 use config::AppConfig;
 use derive_builder::Builder;
@@ -22,6 +24,7 @@ mod test_utils {
     use anyhow::Result;
     use std::{env, path::Path};
 
+    use super::AppState;
     use sqlx::{Executor, PgPool};
     use sqlx_db_tester::TestPg;
 
@@ -47,6 +50,15 @@ mod test_utils {
         println!("execute ts done.");
         Ok((tdb, pool, config))
     }
+
+    impl AppState {
+        pub async fn new_for_test() -> Result<(TestPg, Self)> {
+            let (tdb, pool, config) = common_test().await?;
+            Self::new_inner(pool, config)
+                .await
+                .map(|app_state| (tdb, app_state))
+        }
+    }
 }
 
 #[derive(Clone, Builder)]
@@ -57,17 +69,15 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self> {
-        let app_config = AppConfig::load()?;
-        let pool = PgPool::connect(&app_config.db.to_connect_url()).await?;
+    async fn new_inner(pool: sqlx::PgPool, app_config: AppConfig) -> Result<Self> {
         let services_factory: Box<dyn ServicesFactory> = Box::new(
             services::ServicesFactoryImpl::new(ServicesTypes::AllUnimock, pool.clone()),
         );
 
         let notification_grpc = NotificationGrpcBuilder::default()
-            .email(services_factory.email())
-            .inapp(services_factory.inapp())
-            .sms(services_factory.sms())
+            .email(EmailGrpc(services_factory.email()))
+            .inapp(InAppGrpc(services_factory.inapp()))
+            .sms(SmsGrpc(services_factory.sms()))
             .build()?;
 
         Ok(Self {
@@ -75,6 +85,11 @@ impl AppState {
             pool,
             notification_grpc,
         })
+    }
+    pub async fn new() -> Result<Self> {
+        let app_config = AppConfig::load()?;
+        let pool = PgPool::connect(&app_config.db.to_connect_url()).await?;
+        Self::new_inner(pool, app_config).await
     }
 
     pub async fn grpc_run(&self) -> Result<()> {

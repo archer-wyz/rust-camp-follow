@@ -35,7 +35,7 @@ pub fn random_return_email(pool: sqlx::PgPool) -> Box<dyn Email> {
     let email = Unimock::new(MockEmailInner::send_email.each_call(matching!()).answers(
         &|_, email_msg| {
             let random = rand::random::<u8>();
-            if random % 2 == 0 {
+            if random % 9 == 0 {
                 Ok(SendResponse {
                     id: email_msg.id,
                     timestamp: Utc::now(),

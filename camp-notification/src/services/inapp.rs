@@ -26,7 +26,7 @@ pub fn random_return_inapp() -> Unimock {
             .each_call(matching!())
             .answers(&|_, msg| {
                 let random = rand::random::<u8>();
-                if random % 2 == 0 {
+                if random % 3 == 0 {
                     Ok(SendResponse {
                         id: msg.id,
                         timestamp: Utc::now(),
