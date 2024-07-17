@@ -9,6 +9,7 @@ use tonic::{async_trait, Status};
 use tracing::info;
 
 use crate::{
+    config::WelcomeConfig,
     pb::crm::{
         crm_server::Crm, RecallRequest, RecallResponse, RemindRequest, RemindResponse,
         WelcomeRequest, WelcomeResponse,
@@ -23,6 +24,7 @@ pub struct CrmGrpc<T: MetaData, D: UserStat, U: Notification> {
     pub metadata_service: Arc<T>,
     pub user_stat_service: Arc<D>,
     pub notification_service: Arc<U>,
+    pub welcome_config: WelcomeConfig,
 }
 
 #[async_trait]
@@ -37,7 +39,10 @@ impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
         };
         let Ok(mut user_stat_stream) = self
             .user_stat_service
-            .get_new_user_stream(before(1), before(0))
+            .get_new_user_stream(
+                before(self.welcome_config.created_before_lower),
+                before(self.welcome_config.created_before_upper),
+            )
             .await
         else {
             return Err(Status::internal("Failed to fetch new user stream"));
@@ -48,6 +53,7 @@ impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
             Ok(resp) => resp,
             Err(_) => return Err(Status::internal("Failed to send notification")),
         };
+        info!("welcome {:?}", contents);
         tokio::spawn(async move {
             while let Some(user_resp) = user_stat_stream.next().await {
                 let contents_clone = contents.clone();
@@ -179,6 +185,10 @@ mod test {
             .metadata_service(email)
             .user_stat_service(user_stat)
             .notification_service(notification)
+            .welcome_config(WelcomeConfig {
+                created_before_lower: 1,
+                created_before_upper: 0,
+            })
             .build()
             .unwrap();
         crm.welcome(Request::new(WelcomeRequest {

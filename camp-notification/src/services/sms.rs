@@ -4,7 +4,8 @@ use crate::{model::message::MessageError, services::ServiceError};
 use chrono::Utc;
 use thiserror::Error;
 use tonic::async_trait;
-use unimock::{matching, unimock, MockFn, Unimock};
+#[cfg(feature = "test_utils")]
+use unimock::unimock;
 
 #[derive(Error, Debug)]
 pub enum SmsError {
@@ -15,22 +16,29 @@ pub enum SmsError {
     Model(#[from] MessageError),
 }
 
-#[unimock(api=MockSms)]
+#[cfg_attr(feature = "test_utils", unimock(api=MockEmailInner))]
 #[async_trait]
 pub trait Sms: Send + Sync + 'static {
     async fn send_sms(&self, msg: SmsMessage) -> Result<SendResponse, ServiceError>;
 }
 
-pub fn return_sms_mock() -> Unimock {
-    Unimock::new(MockSms::send_sms.each_call(matching!()).answers(&|_, msg| {
+pub struct SmsFaker;
+
+#[async_trait]
+impl Sms for SmsFaker {
+    async fn send_sms(&self, msg: SmsMessage) -> Result<SendResponse, ServiceError> {
         let random = rand::random::<u8>();
-        if random % 10 != 0 {
+        if random % 9 == 0 {
             Ok(SendResponse {
                 id: msg.id,
                 timestamp: Utc::now(),
             })
         } else {
-            Err(SmsError::Send("Failed".to_string()).into())
+            Err(ServiceError::Sms(SmsError::Send("Failed".to_string())))
         }
-    }))
+    }
+}
+
+pub fn return_sms_mock() -> Box<dyn Sms> {
+    Box::new(SmsFaker {})
 }

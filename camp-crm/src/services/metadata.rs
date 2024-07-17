@@ -36,7 +36,7 @@ impl MetaDataImpl {
 #[async_trait]
 impl MetaData for MetaDataImpl {
     async fn get_content(&self, ids: Vec<u32>) -> Result<Vec<Content>, ServiceError> {
-        let response = match self
+        let mut response = match self
             .client
             .clone()
             .materialize(new_content_req_with_ids(ids))
@@ -46,18 +46,17 @@ impl MetaData for MetaDataImpl {
             Err(status) => return Err(MetaDataError::GrpcStatus(status).into()),
         };
 
-        let contents: Vec<Content> = response
-            .filter_map(|r| async move {
-                match r {
-                    Ok(resp) => resp.content,
-                    Err(e) => {
-                        info!("Error while fetching content: {:?}", e);
-                        None
-                    }
-                }
-            })
-            .collect()
-            .await;
+        info!("getting content from stream");
+        let mut contents = Vec::new();
+        while let Some(resp) = response.next().await {
+            match resp {
+                Ok(content) => match content.content {
+                    Some(c) => contents.push(c),
+                    None => info!("Content not found"),
+                },
+                Err(e) => info!("Error while fetching content: {:?}", e),
+            }
+        }
         Ok(contents)
     }
 }

@@ -6,6 +6,7 @@ use sqlx::FromRow;
 use std::collections::HashMap;
 use thiserror::Error;
 use tonic::async_trait;
+use tracing::info;
 
 #[derive(Debug, Error)]
 pub enum UserStatError {
@@ -65,6 +66,7 @@ impl UserStatService for UserStatServiceImpl {
     ) -> Result<Vec<UserStatVO>, UserStatError> {
         let query: Query = request.into();
         let query_string = query.try_to_string().await?;
+        info!("query string: {}", query_string);
         let ret = sqlx::query_as(&query_string).fetch_all(&self.pool).await?;
         Ok(ret)
     }
@@ -81,9 +83,11 @@ impl UserStatService for UserStatServiceImpl {
 impl TimeQuery {
     fn to_raw_query(&self, name: &str) -> String {
         match Some((self.lower, self.upper)) {
-            Some((Some(lower), Some(upper))) => format!("{} BETWEEN {} AND {}", name, lower, upper),
-            Some((Some(lower), None)) => format!("{} >= {}", name, lower),
-            Some((None, Some(upper))) => format!("{} <= {}", name, upper),
+            Some((Some(lower), Some(upper))) => {
+                format!("{} BETWEEN '{:?}' AND '{:?}'", name, lower, upper)
+            }
+            Some((Some(lower), None)) => format!("{} >= '{:?}'", name, lower),
+            Some((None, Some(upper))) => format!("{} <= '{:?}'", name, upper),
             _ => "true".to_string(),
         }
     }
@@ -168,7 +172,7 @@ mod test {
         let query = query.try_to_string().await.unwrap();
         assert_eq!(
             query,
-            r#"SELECT email, name FROM user_stats WHERE created_at BETWEEN 1970-01-01 00:00:00.000000010 UTC AND 1970-01-01 00:00:00.000000020 UTC AND array[1, 2, 3] <@ recent_watched"#
+            r#"SELECT email, name FROM user_stats WHERE created_at BETWEEN '1970-01-01T00:00:00.000000010Z' AND '1970-01-01T00:00:00.000000020Z' AND array[1, 2, 3] <@ recent_watched"#
         );
         println!("{}", query);
     }
@@ -199,7 +203,7 @@ mod test {
         let query = query.try_to_string().await.unwrap();
         assert_eq!(
             query,
-            r#"SELECT email, name FROM user_stats WHERE created_at BETWEEN 1970-01-01 00:00:00.000000010 UTC AND 1970-01-01 00:00:00.000000020 UTC"#
+            r#"SELECT email, name FROM user_stats WHERE created_at BETWEEN '1970-01-01T00:00:00.000000010Z' AND '1970-01-01T00:00:00.000000020Z'"#
         );
         println!("{}", query);
     }

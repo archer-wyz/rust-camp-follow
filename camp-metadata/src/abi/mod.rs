@@ -83,6 +83,7 @@ impl Metadata for MetadataGRPC {
                     id: req.id,
                     content: Some(Faker.fake()),
                 };
+                info!("metadata sending resp {:?}", resp.id);
                 tx.send(Ok(resp)).await.unwrap();
             }
         });

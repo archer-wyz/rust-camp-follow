@@ -19,7 +19,7 @@ pub async fn common() -> Result<(PgPool, AppConfig)> {
 pub type UserStatGRPCV1 = UserStatGRPC<UserStatServiceImpl>;
 
 impl AppState<UserStatGRPCV1> {
-    pub async fn new() -> Result<Self> {
+    pub async fn try_new() -> Result<Self> {
         let (pool, config) = common().await?;
         let user_stat_service = Arc::new(
             UserStatServiceImplBuilder::default()

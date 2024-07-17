@@ -41,6 +41,8 @@ impl DBConfig {
 impl AppConfig {
     pub fn load() -> Result<Self> {
         let config: Self = config_load(vec![
+            "./camp-user-stat/user_stat.yml".to_string(),
+            "../camp-user-stat/user_stat.yml".to_string(),
             "./user_stat.yml".to_string(),
             "/etc/config/user_stat.yml".to_string(),
         ])?;

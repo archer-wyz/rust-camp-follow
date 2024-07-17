@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
+use tracing::info;
 
 type ServiceResult<T> = Result<Response<T>, Status>;
 type ResponseUserStream = Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>;
@@ -88,9 +89,12 @@ where
     async fn query(&self, request: Request<QueryRequest>) -> ServiceResult<Self::QueryStream> {
         let qr = request.into_inner();
         match self.service.query(qr).await {
-            Ok(users) => Ok(Response::new(Box::pin(futures::stream::iter(
-                users.into_iter().map(|v| Ok(v.into())),
-            )))),
+            Ok(users) => {
+                info!("user_stat query get users: {:?}", users.len());
+                Ok(Response::new(Box::pin(futures::stream::iter(
+                    users.into_iter().map(|v| Ok(v.into())),
+                ))))
+            }
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }

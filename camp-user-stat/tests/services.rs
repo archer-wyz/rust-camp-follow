@@ -17,7 +17,7 @@ async fn query_should_work() -> Result<()> {
     });
     sleep(Duration::from_secs(1)).await;
     println!("grpc server started");
-    let mut client = UserStatClient::connect("http://[::1]:50052").await?;
+    let mut client = UserStatClient::connect("http://[::1]:50055").await?;
     let req = QueryRequestBuilder::default()
         .id((
             "viewed_but_not_started".to_string(),

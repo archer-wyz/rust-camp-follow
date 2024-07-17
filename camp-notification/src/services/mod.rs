@@ -58,8 +58,8 @@ impl ServicesFactoryImpl {
                 let sms = sms::return_sms_mock();
                 Self {
                     email: Arc::new(email),
-                    inapp: Arc::new(Box::new(inapp)),
-                    sms: Arc::new(Box::new(sms)),
+                    inapp: Arc::new(inapp),
+                    sms: Arc::new(sms),
                 }
             }
         }

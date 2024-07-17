@@ -1,4 +1,5 @@
 use thiserror::Error;
+use tracing::info;
 #[derive(Debug, Error)]
 pub enum ConfigErr {
     #[error("Open config error: {0}")]
@@ -22,5 +23,6 @@ where
         }
     }
     let path_string = format!("{:?} not exists", paths);
+    info!("Config not exists: {}", path_string);
     Err(ConfigErr::NotExists(path_string))
 }

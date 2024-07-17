@@ -5,7 +5,8 @@ use chrono::Utc;
 use thiserror::Error;
 use tonic::async_trait;
 use tracing::info;
-use unimock::{matching, unimock, MockFn, Unimock};
+#[cfg(feature = "test_utils")]
+use unimock::unimock;
 
 #[derive(Error, Debug)]
 pub enum EmailError {
@@ -17,7 +18,7 @@ pub enum EmailError {
     FailedButSaved(Message),
 }
 
-#[unimock(api=MockEmailInner)]
+#[cfg_attr(feature = "test_utils", unimock(api=MockEmailInner))]
 #[async_trait]
 pub trait EmailInner: Send + Sync + 'static {
     async fn send_email(
@@ -31,22 +32,29 @@ pub trait Email: Send + Sync + 'static {
     async fn send_email(&self, email: EmailMessage) -> Result<SendResponse, ServiceError>;
 }
 
-pub fn random_return_email(pool: sqlx::PgPool) -> Box<dyn Email> {
-    let email = Unimock::new(MockEmailInner::send_email.each_call(matching!()).answers(
-        &|_, email_msg| {
-            let random = rand::random::<u8>();
-            if random % 9 == 0 {
-                Ok(SendResponse {
-                    id: email_msg.id,
-                    timestamp: Utc::now(),
-                })
-            } else {
-                Err((email_msg, EmailError::Send("Failed".to_string())))
-            }
-        },
-    ));
+pub struct EmailFaker;
 
-    let email_fail_over = EmailFailOver::<Unimock> {
+#[async_trait]
+impl EmailInner for EmailFaker {
+    async fn send_email(
+        &self,
+        email: EmailMessage,
+    ) -> Result<SendResponse, (EmailMessage, EmailError)> {
+        let random = rand::random::<u8>();
+        if random % 9 == 0 {
+            Ok(SendResponse {
+                id: email.id,
+                timestamp: Utc::now(),
+            })
+        } else {
+            Err((email, EmailError::Send("Failed".to_string())))
+        }
+    }
+}
+
+pub fn random_return_email(pool: sqlx::PgPool) -> Box<dyn Email> {
+    let email = EmailFaker {};
+    let email_fail_over = EmailFailOver::<EmailFaker> {
         sender: email,
         pool,
     };
@@ -94,6 +102,8 @@ impl<T: EmailInner> Email for EmailFailOver<T> {
 
 #[cfg(test)]
 mod test {
+    use unimock::{matching, MockFn as _, Unimock};
+
     use super::*;
 
     async fn run_email_test<T: EmailInner>(

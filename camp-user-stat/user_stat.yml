@@ -1,7 +1,7 @@
 grpc:
-  port: 50052
+  port: 50055
 http:
-  port: 50021
+  port: 1443
   host: "localhost"
 db:
   host: "localhost"

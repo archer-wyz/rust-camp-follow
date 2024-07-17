@@ -19,6 +19,7 @@ impl AppState<CrmGrpcV1> {
             .metadata_service(Arc::new(metadata_service))
             .user_stat_service(Arc::new(user_stat_service))
             .notification_service(Arc::new(notification_service))
+            .welcome_config(app_config.welcome.clone())
             .build()?;
         Ok(AppStateBuilder::default()
             .crm_grpc(crm_grpc)

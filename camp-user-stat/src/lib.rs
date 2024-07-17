@@ -11,6 +11,7 @@ use anyhow::Result;
 use config::AppConfig;
 use derive_builder::Builder;
 use std::net::ToSocketAddrs as _;
+use tracing::info;
 
 // AppState
 // AppState's fields are grpc-service、axum-service、config or any other stateless components,
@@ -32,12 +33,11 @@ where
     // 4. TODO registry axum handler but not run
     pub async fn grpc_run(self) -> Result<()> {
         let addr = format!("[::1]:{:?}", self.app_config.grpc.port);
-        println!("grpc server running on {:?}", addr);
+        info!("user_stat_grpc server is ready to running on {:?}", addr);
         tonic::transport::Server::builder()
             .add_service(UserStatServer::new(self.user_stat_grpc))
             .serve(addr.to_socket_addrs()?.next().unwrap())
             .await?;
-        println!("grpc quit");
         Ok(())
     }
 }

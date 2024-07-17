@@ -8,6 +8,7 @@ use config::AppConfig;
 use derive_builder::Builder;
 use services::{ServicesFactory, ServicesTypes};
 use sqlx::PgPool;
+use tracing::info;
 
 use crate::pb::notification::notification_server::NotificationServer;
 
@@ -94,12 +95,11 @@ impl AppState {
 
     pub async fn grpc_run(&self) -> Result<()> {
         let addr = format!("[::1]:{:?}", self.app_config.grpc.port);
-        println!("grpc server running on {:?}", addr);
+        info!("notification_grpc server is ready to running on {:?}", addr);
         tonic::transport::Server::builder()
             .add_service(NotificationServer::new(self.notification_grpc.clone()))
             .serve(addr.to_socket_addrs()?.next().unwrap())
             .await?;
-        println!("grpc quit");
         Ok(())
     }
 }

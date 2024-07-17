@@ -40,6 +40,7 @@ impl DbConfig {
 impl AppConfig {
     pub fn load() -> Result<Self> {
         let res = camp_core::config::config_load(vec![
+            "../camp-notification/notification.yml".to_string(),
             "./camp-notification/notification.yml".to_string(),
             "./notification.yml".to_string(),
             "/etc/config/notification.yml".to_string(),
