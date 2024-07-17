@@ -9,13 +9,13 @@ use unimock::unimock;
 #[derive(Error, Debug)]
 pub enum InAppError {
     #[error("InApp sending failed: {0}")]
-    Send(String),
+    Send(InAppMessage),
 
     #[error("Model error")]
     Model(#[from] MessageError),
 }
 
-#[cfg_attr(feature = "test_utils", unimock(api=MockEmailInner))]
+#[cfg_attr(feature = "test_utils", unimock(api=MockEmail))]
 #[async_trait]
 pub trait InApp: Send + Sync + 'static {
     async fn send_inapp(&self, msg: InAppMessage) -> Result<SendResponse, ServiceError>;
@@ -33,7 +33,7 @@ impl InApp for InAppFaker {
                 timestamp: Utc::now(),
             })
         } else {
-            Err(ServiceError::InApp(InAppError::Send("Failed".to_string())))
+            Err(ServiceError::InApp(InAppError::Send(msg)))
         }
     }
 }

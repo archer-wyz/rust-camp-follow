@@ -18,6 +18,9 @@ impl From<UserStatVO> for User {
         User {
             name: value.name,
             email: value.email,
+            started_but_not_finished: value
+                .started_but_not_finished
+                .map_or(vec![], |v| v.iter().map(|v| *v as _).collect()),
         }
     }
 }

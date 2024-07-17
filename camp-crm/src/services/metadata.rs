@@ -18,7 +18,7 @@ pub enum MetaDataError {
 #[cfg_attr(feature = "test_utils", unimock::unimock(api=MockMetaData))]
 #[async_trait]
 pub trait MetaData: Send + Sync + 'static {
-    async fn get_content(&self, ids: Vec<u32>) -> Result<Vec<Content>, ServiceError>;
+    async fn get_content(&self, ids: &[u32]) -> Result<Vec<Content>, ServiceError>;
 }
 
 #[derive(Clone)]
@@ -35,7 +35,7 @@ impl MetaDataImpl {
 
 #[async_trait]
 impl MetaData for MetaDataImpl {
-    async fn get_content(&self, ids: Vec<u32>) -> Result<Vec<Content>, ServiceError> {
+    async fn get_content(&self, ids: &[u32]) -> Result<Vec<Content>, ServiceError> {
         let mut response = match self
             .client
             .clone()
@@ -58,7 +58,7 @@ impl MetaData for MetaDataImpl {
     }
 }
 
-fn new_content_req_with_ids(ids: Vec<u32>) -> impl Stream<Item = MaterializeRequest> {
+fn new_content_req_with_ids(ids: &[u32]) -> impl Stream<Item = MaterializeRequest> {
     let req_ids: HashSet<MaterializeRequest> = ids
         .iter()
         .map(|id| MaterializeRequest { id: *id })

@@ -38,6 +38,8 @@ pub struct Query {
 pub struct UserStatVO {
     pub email: String,
     pub name: String,
+    #[sqlx(default)]
+    pub started_but_not_finished: Option<Vec<i32>>,
 }
 
 #[async_trait]

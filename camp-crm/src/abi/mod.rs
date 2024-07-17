@@ -1,6 +1,6 @@
 use camp_core::core_fake::before;
 use camp_metadata::abi::Tpl;
-use camp_notification::pb::notification::{send_request, EmailMessage, SendRequest};
+use camp_notification::pb::notification::{send_request, EmailMessage, InAppMessage, SendRequest};
 use derive_builder::Builder;
 use futures::StreamExt as _;
 use std::sync::Arc;
@@ -19,12 +19,23 @@ use crate::{
 
 use tonic::{Request, Response};
 
-#[derive(Clone, Debug, Builder)]
+#[derive(Debug, Builder)]
 pub struct CrmGrpc<T: MetaData, D: UserStat, U: Notification> {
-    pub metadata_service: Arc<T>,
-    pub user_stat_service: Arc<D>,
-    pub notification_service: Arc<U>,
+    pub metadata_service: Arc<Box<T>>,
+    pub user_stat_service: Arc<Box<D>>,
+    pub notification_service: Arc<Box<U>>,
     pub welcome_config: WelcomeConfig,
+}
+
+impl<T: MetaData, D: UserStat, U: Notification> Clone for CrmGrpc<T, D, U> {
+    fn clone(&self) -> Self {
+        Self {
+            metadata_service: self.metadata_service.clone(),
+            user_stat_service: self.user_stat_service.clone(),
+            notification_service: self.notification_service.clone(),
+            welcome_config: self.welcome_config.clone(),
+        }
+    }
 }
 
 impl From<ServiceError> for Status {
@@ -42,7 +53,7 @@ impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
         let welcome = request.into_inner();
         let contents = Arc::new(
             self.metadata_service
-                .get_content(welcome.content_ids)
+                .get_content(&welcome.content_ids)
                 .await?,
         );
         let mut user_stat_stream = self
@@ -103,9 +114,9 @@ impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
         info!("crm recall: {:?}", req);
         let mut user_stream = self
             .user_stat_service
-            .get_lasted_watch_not_finished_stream(before(req.last_visit_interval as usize))
+            .get_lasted_visit_before_stream(before(req.last_visit_interval as usize))
             .await?;
-        let contents = Arc::new(self.metadata_service.get_content(req.content_ids).await?);
+        let contents = Arc::new(self.metadata_service.get_content(&req.content_ids).await?);
         let (tx, rx) = mpsc::channel(1024);
         let mut notification_resp_stream = self.notification_service.notification(rx).await?;
 
@@ -151,9 +162,61 @@ impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
     /// last watched in X days, and user still have unfinished contents
     async fn remind(
         &self,
-        _request: Request<RemindRequest>,
+        request: Request<RemindRequest>,
     ) -> std::result::Result<Response<RemindResponse>, Status> {
-        Err(tonic::Status::unimplemented("Not implemented"))
+        let self_clone: Self = self.clone();
+        let req = request.into_inner();
+        let mut user_stream = self
+            .user_stat_service
+            .get_lasted_visit_but_not_finished(before(req.last_visit_interval as usize))
+            .await?;
+
+        let (tx, rx) = mpsc::channel(1024);
+        let mut notification_resp_stream = self.notification_service.notification(rx).await?;
+        tokio::spawn(async move {
+            while let Some(user) = user_stream.next().await {
+                match user {
+                    Ok(user) => match self_clone
+                        .metadata_service
+                        .get_content(&user.started_but_not_finished)
+                        .await
+                    {
+                        Ok(contents) => {
+                            let send_resp = SendRequest {
+                                msg: Some(send_request::Msg::InApp(InAppMessage {
+                                    message_id: uuid::Uuid::new_v4().to_string(),
+                                    sender: "remind".to_string(),
+                                    body: Tpl(&contents).to_body(),
+                                    device_id: "MacBook SN ABCDEF".to_string(),
+                                    title: "inapp".to_string(),
+                                })),
+                            };
+                            tx.send(send_resp).await.unwrap();
+                        }
+                        Err(e) => {
+                            warn!("get content error {:?}", e)
+                        }
+                    },
+                    Err(e) => {
+                        warn!("user stream end with status {:?}", e);
+                        break;
+                    }
+                }
+            }
+        });
+
+        while let Some(notification_resp) = notification_resp_stream.next().await {
+            match notification_resp {
+                Ok(_) => {}
+                Err(e) => {
+                    info!("Error while sending notification: {:?}", e);
+                    return Err(Status::internal("Failed to send notification"));
+                }
+            }
+        }
+        Ok(Response::new(RemindResponse {
+            id: uuid::Uuid::new_v4().to_string(),
+        }))
     }
 }
 
@@ -175,7 +238,7 @@ mod test {
 
     #[tokio::test]
     async fn test_welcome() -> Result<()> {
-        let email = Arc::new(Unimock::new(
+        let email = Arc::new(Box::new(Unimock::new(
             MockMetaData::get_content
                 .some_call(matching!())
                 .answers(&|_, ids| {
@@ -183,14 +246,14 @@ mod test {
                     let mut rng = rand::thread_rng();
                     for id in ids {
                         let mut content: Content = Faker.fake_with_rng(&mut rng);
-                        content.id = id;
+                        content.id = *id;
                         contents.push(content)
                     }
                     Ok(contents)
                 }),
-        ));
+        )));
 
-        let user_stat = Arc::new(Unimock::new(
+        let user_stat = Arc::new(Box::new(Unimock::new(
             MockUserStat::get_new_user_stream
                 .some_call(matching!())
                 .answers(&|_, _, _| {
@@ -199,18 +262,20 @@ mod test {
                         Ok(User {
                             email: UniqueEmail.fake_with_rng(&mut rng),
                             name: Name().fake_with_rng(&mut rng),
+                            started_but_not_finished: vec![],
                         }),
                         Ok(User {
                             email: UniqueEmail.fake_with_rng(&mut rng),
                             name: Name().fake_with_rng(&mut rng),
+                            started_but_not_finished: vec![],
                         }),
                         Err(Status::unknown("mock error")),
                     ];
                     let var_name = users.clone();
                     Ok(Box::pin(tokio_stream::iter(var_name)))
                 }),
-        ));
-        let notification = Arc::new(Unimock::new(
+        )));
+        let notification = Arc::new(Box::new(Unimock::new(
             MockNotification::notification
                 .some_call(matching!())
                 .answers(&|_, _| {
@@ -228,7 +293,7 @@ mod test {
                     ];
                     Ok(Box::pin(tokio_stream::iter(send_responses)))
                 }),
-        ));
+        )));
         let crm = CrmGrpcBuilder::default()
             .metadata_service(email)
             .user_stat_service(user_stat)

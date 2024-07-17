@@ -49,11 +49,22 @@ impl From<EmailMessage> for Message {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SmsMessage {
     pub id: String,
     pub sender: String,
     pub body: String,
     pub recipients: Vec<String>,
+}
+
+impl Display for SmsMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "SmsMessage {{ id: {}, sender: {}, recipients: {:?}, body: {} }}",
+            self.id, self.sender, self.recipients, self.body
+        )
+    }
 }
 
 impl From<SmsMessage> for Message {
@@ -75,12 +86,23 @@ impl From<SmsMessage> for Message {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct InAppMessage {
     pub id: String,
     pub sender: String,
     pub body: String,
     pub device_id: String,
     pub title: String,
+}
+
+impl Display for InAppMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "InAppMessage {{ id: {}, sender: {}, body: {}, device_id: {}, title: {} }}",
+            self.id, self.sender, self.body, self.device_id, self.title
+        )
+    }
 }
 
 impl From<InAppMessage> for Message {

@@ -16,9 +16,9 @@ impl AppState<CrmGrpcV1> {
         let user_stat_service = UserStatV1::try_new(&app_config.grpc.user_stat).await?;
         let notification_service = NotificationV1::try_new(&app_config.grpc.notification).await?;
         let crm_grpc: CrmGrpcV1 = CrmGrpcBuilder::default()
-            .metadata_service(Arc::new(metadata_service))
-            .user_stat_service(Arc::new(user_stat_service))
-            .notification_service(Arc::new(notification_service))
+            .metadata_service(Arc::new(Box::new(metadata_service)))
+            .user_stat_service(Arc::new(Box::new(user_stat_service)))
+            .notification_service(Arc::new(Box::new(notification_service)))
             .welcome_config(app_config.welcome.clone())
             .build()?;
         Ok(AppStateBuilder::default()

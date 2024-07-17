@@ -10,7 +10,7 @@ use unimock::unimock;
 #[derive(Error, Debug)]
 pub enum SmsError {
     #[error("Sms sending failed: {0}")]
-    Send(String),
+    Send(SmsMessage),
 
     #[error("Model error")]
     Model(#[from] MessageError),
@@ -34,7 +34,7 @@ impl Sms for SmsFaker {
                 timestamp: Utc::now(),
             })
         } else {
-            Err(ServiceError::Sms(SmsError::Send("Failed".to_string())))
+            Err(SmsError::Send(msg).into())
         }
     }
 }

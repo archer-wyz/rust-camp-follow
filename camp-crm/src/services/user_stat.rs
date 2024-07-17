@@ -1,13 +1,14 @@
 use anyhow::Result;
 use camp_core::proto::utc_to_ts;
 use camp_user_stat::pb::user_stat::{
-    user_stat_client::UserStatClient, QueryRequest, TimeQuery, User,
+    user_stat_client::UserStatClient, QueryRequest, RawQueryRequest, TimeQuery, User,
 };
 use chrono::{DateTime, Utc};
 use futures::Stream;
 use std::{collections::HashMap, pin::Pin};
 use thiserror::Error;
 use tonic::{async_trait, transport::Channel, Request, Status};
+use tracing::info;
 
 use super::ServiceError;
 
@@ -26,7 +27,12 @@ pub trait UserStat: Clone + Send + Sync + 'static {
         upper: DateTime<Utc>,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError>;
 
-    async fn get_lasted_watch_not_finished_stream(
+    async fn get_lasted_visit_before_stream(
+        &self,
+        lasted_visited_before: DateTime<Utc>,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError>;
+
+    async fn get_lasted_visit_but_not_finished(
         &self,
         lasted_visited_before: DateTime<Utc>,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError>;
@@ -52,13 +58,29 @@ impl UserStat for UserStatImpl {
         Ok(Box::pin(response))
     }
 
-    async fn get_lasted_watch_not_finished_stream(
+    async fn get_lasted_visit_before_stream(
         &self,
         lasted_visited_before: DateTime<Utc>,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError> {
         let request = new_user_req_last_visite(lasted_visited_before);
         let response = match self.client.clone().query(request).await {
             Ok(response) => response.into_inner(),
+            Err(status) => return Err(UserError::GrpcStatus(status).into()),
+        };
+        Ok(Box::pin(response))
+    }
+
+    async fn get_lasted_visit_but_not_finished(
+        &self,
+        lasted_visited_before: DateTime<Utc>,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError> {
+        let raw_query = format!("
+            SELECT name, email, started_but_not_finished from user_stats WHERE last_visited_at <= '{:?}'
+        ", lasted_visited_before);
+        info!("raw_query: {}", raw_query);
+        let req = Request::new(RawQueryRequest { query: raw_query });
+        let response = match self.client.clone().raw_query(req).await {
+            Ok(stream) => stream.into_inner(),
             Err(status) => return Err(UserError::GrpcStatus(status).into()),
         };
         Ok(Box::pin(response))

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use camp_crm::pb::crm::{crm_client::CrmClient, RecallRequest, WelcomeRequest};
+use camp_crm::pb::crm::{crm_client::CrmClient, RecallRequest, RemindRequest, WelcomeRequest};
 use tokio::time::{sleep, Duration};
 use tracing::{info, level_filters::LevelFilter};
 use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
@@ -44,6 +44,7 @@ async fn main() -> Result<()> {
         .await
         .unwrap();
     info!("welcome resp ={:?}", welcome_resp);
+    sleep(Duration::from_secs(5)).await;
     let recall_resp = client
         .recall(RecallRequest {
             id: "test".to_string(),
@@ -53,5 +54,14 @@ async fn main() -> Result<()> {
         .await
         .unwrap();
     info!("recall resp ={:?}", recall_resp);
+    sleep(Duration::from_secs(5)).await;
+    let remind_resp = client
+        .remind(RemindRequest {
+            id: "test".to_string(),
+            last_visit_interval: 30,
+        })
+        .await
+        .unwrap();
+    info!("remind resp ={:?}", remind_resp);
     Ok(())
 }

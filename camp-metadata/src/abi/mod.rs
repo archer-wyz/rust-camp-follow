@@ -73,16 +73,21 @@ impl Metadata for MetadataGRPC {
     ) -> ServiceResult<Self::MaterializeStream> {
         let mut stream = request.into_inner();
         let (tx, rx) = mpsc::channel(4);
-        info!("materialize");
         tokio::spawn(async move {
+            let uuid = uuid::Uuid::new_v4();
+            info!("metadata streaming request start {:?}", uuid);
+            let mut cnt = 0;
             while let Some(req) = stream.next().await {
                 let req = req.unwrap();
-                info!("req: {:?}", req);
                 let mut content: Content = Faker.fake();
                 content.id = req.id;
-                info!("metadata sending resp {:?}", content.id);
                 tx.send(Ok(content)).await.unwrap();
+                cnt += 1;
             }
+            info!(
+                "metadata streaming request {:?} end, which totally send {:?}",
+                uuid, cnt
+            );
         });
         let output_stream = ReceiverStream::new(rx);
         Ok(Response::new(Box::pin(output_stream)))
