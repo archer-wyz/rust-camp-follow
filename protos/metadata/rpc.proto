@@ -5,5 +5,5 @@ import "metadata/messages.proto";
 
 service Metadata {
   rpc Materialize(stream MaterializeRequest)
-      returns (stream MaterializeResponse) {}
+      returns (stream Content) {}
 }

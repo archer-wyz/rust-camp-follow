@@ -44,14 +44,6 @@ pub struct MaterializeRequest {
     #[prost(uint32, tag = "1")]
     pub id: u32,
 }
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct MaterializeResponse {
-    #[prost(uint32, tag = "1")]
-    pub id: u32,
-    #[prost(message, optional, tag = "2")]
-    pub content: ::core::option::Option<Content>,
-}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ContentType {
@@ -175,7 +167,7 @@ pub mod metadata_client {
             &mut self,
             request: impl tonic::IntoStreamingRequest<Message = super::MaterializeRequest>,
         ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::MaterializeResponse>>,
+            tonic::Response<tonic::codec::Streaming<super::Content>>,
             tonic::Status,
         > {
             self.inner.ready().await.map_err(|e| {
@@ -202,7 +194,7 @@ pub mod metadata_server {
     pub trait Metadata: Send + Sync + 'static {
         /// Server streaming response type for the Materialize method.
         type MaterializeStream: tonic::codegen::tokio_stream::Stream<
-                Item = std::result::Result<super::MaterializeResponse, tonic::Status>,
+                Item = std::result::Result<super::Content, tonic::Status>,
             > + Send
             + 'static;
         async fn materialize(
@@ -290,7 +282,7 @@ pub mod metadata_server {
                     #[allow(non_camel_case_types)]
                     struct MaterializeSvc<T: Metadata>(pub Arc<T>);
                     impl<T: Metadata> tonic::server::StreamingService<super::MaterializeRequest> for MaterializeSvc<T> {
-                        type Response = super::MaterializeResponse;
+                        type Response = super::Content;
                         type ResponseStream = T::MaterializeStream;
                         type Future =
                             BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;

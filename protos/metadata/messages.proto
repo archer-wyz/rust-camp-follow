@@ -36,8 +36,3 @@ message Publisher {
 message MaterializeRequest {
   uint32 id = 1;
 }
-
-message MaterializeResponse {
-  uint32 id = 1;
-  Content content = 2;
-}

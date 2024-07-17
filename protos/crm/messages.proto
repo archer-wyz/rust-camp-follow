@@ -18,8 +18,7 @@ message WelcomeResponse {
 message RecallRequest {
   string id = 1;
   uint32 last_visit_interval = 2;
-  uint32 last_watched_interval = 3;
-  repeated  uint32 content_ids = 4;
+  repeated  uint32 content_ids = 3;
 }
 
 message RecallResponse {

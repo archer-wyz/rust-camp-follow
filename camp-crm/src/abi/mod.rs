@@ -6,7 +6,7 @@ use futures::StreamExt as _;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tonic::{async_trait, Status};
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::{
     config::WelcomeConfig,
@@ -14,7 +14,7 @@ use crate::{
         crm_server::Crm, RecallRequest, RecallResponse, RemindRequest, RemindResponse,
         WelcomeRequest, WelcomeResponse,
     },
-    services::{MetaData, Notification, UserStat},
+    services::{MetaData, Notification, ServiceError, UserStat},
 };
 
 use tonic::{Request, Response};
@@ -27,6 +27,12 @@ pub struct CrmGrpc<T: MetaData, D: UserStat, U: Notification> {
     pub welcome_config: WelcomeConfig,
 }
 
+impl From<ServiceError> for Status {
+    fn from(value: ServiceError) -> Self {
+        Status::internal(value.to_string())
+    }
+}
+
 #[async_trait]
 impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
     async fn welcome(
@@ -34,25 +40,20 @@ impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
         request: Request<WelcomeRequest>,
     ) -> Result<Response<WelcomeResponse>, Status> {
         let welcome = request.into_inner();
-        let Ok(contents) = self.metadata_service.get_content(welcome.content_ids).await else {
-            return Err(Status::internal("Failed to fetch content"));
-        };
-        let Ok(mut user_stat_stream) = self
+        let contents = Arc::new(
+            self.metadata_service
+                .get_content(welcome.content_ids)
+                .await?,
+        );
+        let mut user_stat_stream = self
             .user_stat_service
             .get_new_user_stream(
                 before(self.welcome_config.created_before_lower),
                 before(self.welcome_config.created_before_upper),
             )
-            .await
-        else {
-            return Err(Status::internal("Failed to fetch new user stream"));
-        };
-        let contents = Arc::new(contents);
+            .await?;
         let (tx, rx) = mpsc::channel(1024);
-        let mut notification_resp_stream = match self.notification_service.notification(rx).await {
-            Ok(resp) => resp,
-            Err(_) => return Err(Status::internal("Failed to send notification")),
-        };
+        let mut notification_resp_stream = self.notification_service.notification(rx).await?;
         info!("welcome {:?}", contents);
         tokio::spawn(async move {
             while let Some(user_resp) = user_stat_stream.next().await {
@@ -96,10 +97,57 @@ impl<T: MetaData, D: UserStat, U: Notification> Crm for CrmGrpc<T, D, U> {
     /// last watched in X days, given them something to watch
     async fn recall(
         &self,
-        _request: Request<RecallRequest>,
+        request: Request<RecallRequest>,
     ) -> std::result::Result<Response<RecallResponse>, Status> {
-        Err(tonic::Status::unimplemented("Not implemented"))
+        let req = request.into_inner();
+        info!("crm recall: {:?}", req);
+        let mut user_stream = self
+            .user_stat_service
+            .get_lasted_watch_not_finished_stream(before(req.last_visit_interval as usize))
+            .await?;
+        let contents = Arc::new(self.metadata_service.get_content(req.content_ids).await?);
+        let (tx, rx) = mpsc::channel(1024);
+        let mut notification_resp_stream = self.notification_service.notification(rx).await?;
+
+        tokio::spawn(async move {
+            while let Some(user) = user_stream.next().await {
+                match user {
+                    Ok(user) => {
+                        let contents_clone = contents.clone();
+                        let email_msg = send_request::Msg::Email(EmailMessage {
+                            message_id: uuid::Uuid::new_v4().to_string(),
+                            subject: "recall".to_string(),
+                            sender: "recall".to_string(),
+                            recipients: vec![user.email],
+                            body: Tpl(contents_clone.as_ref()).to_body(),
+                        });
+                        tx.send(SendRequest {
+                            msg: Some(email_msg),
+                        })
+                        .await
+                        .unwrap();
+                    }
+                    Err(e) => {
+                        warn!("Failed to get user: {}", e);
+                    }
+                }
+            }
+        });
+
+        while let Some(notification_resp) = notification_resp_stream.next().await {
+            match notification_resp {
+                Ok(_) => {}
+                Err(e) => {
+                    info!("Error while sending notification: {:?}", e);
+                    return Err(Status::internal("Failed to send notification"));
+                }
+            }
+        }
+        Ok(Response::new(RecallResponse {
+            id: uuid::Uuid::new_v4().to_string(),
+        }))
     }
+
     /// last watched in X days, and user still have unfinished contents
     async fn remind(
         &self,

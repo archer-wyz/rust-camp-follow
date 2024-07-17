@@ -25,6 +25,11 @@ pub trait UserStat: Clone + Send + Sync + 'static {
         lower: DateTime<Utc>,
         upper: DateTime<Utc>,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError>;
+
+    async fn get_lasted_watch_not_finished_stream(
+        &self,
+        lasted_visited_before: DateTime<Utc>,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError>;
 }
 
 #[derive(Clone)]
@@ -46,6 +51,18 @@ impl UserStat for UserStatImpl {
         };
         Ok(Box::pin(response))
     }
+
+    async fn get_lasted_watch_not_finished_stream(
+        &self,
+        lasted_visited_before: DateTime<Utc>,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>, ServiceError> {
+        let request = new_user_req_last_visite(lasted_visited_before);
+        let response = match self.client.clone().query(request).await {
+            Ok(response) => response.into_inner(),
+            Err(status) => return Err(UserError::GrpcStatus(status).into()),
+        };
+        Ok(Box::pin(response))
+    }
 }
 
 impl UserStatImpl {
@@ -53,6 +70,21 @@ impl UserStatImpl {
         let client = UserStatClient::connect(url.to_string()).await?;
         Ok(Self { client })
     }
+}
+
+fn new_user_req_last_visite(time: DateTime<Utc>) -> Request<QueryRequest> {
+    Request::new(QueryRequest {
+        timestamps: vec![(
+            "last_visited_at".to_string(),
+            TimeQuery {
+                upper: Some(utc_to_ts(time)),
+                lower: None,
+            },
+        )]
+        .into_iter()
+        .collect(),
+        ids: HashMap::new(),
+    })
 }
 
 fn new_user_req_created_between(

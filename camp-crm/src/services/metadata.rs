@@ -50,10 +50,7 @@ impl MetaData for MetaDataImpl {
         let mut contents = Vec::new();
         while let Some(resp) = response.next().await {
             match resp {
-                Ok(content) => match content.content {
-                    Some(c) => contents.push(c),
-                    None => info!("Content not found"),
-                },
+                Ok(content) => contents.push(content),
                 Err(e) => info!("Error while fetching content: {:?}", e),
             }
         }

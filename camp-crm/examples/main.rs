@@ -1,5 +1,5 @@
 use anyhow::Result;
-use camp_crm::pb::crm::{crm_client::CrmClient, WelcomeRequest};
+use camp_crm::pb::crm::{crm_client::CrmClient, RecallRequest, WelcomeRequest};
 use tokio::time::{sleep, Duration};
 use tracing::{info, level_filters::LevelFilter};
 use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
@@ -36,12 +36,22 @@ async fn main() -> Result<()> {
     sleep(Duration::from_millis(10)).await;
 
     let mut client = CrmClient::connect(format!("http://[::1]:{}", config.grpc.port)).await?;
-    let stream = client
+    let welcome_resp = client
         .welcome(WelcomeRequest {
             interval: 1,
             content_ids: vec![10, 20],
         })
-        .await?;
-    info!("stream={:?}", stream);
+        .await
+        .unwrap();
+    info!("welcome resp ={:?}", welcome_resp);
+    let recall_resp = client
+        .recall(RecallRequest {
+            id: "test".to_string(),
+            last_visit_interval: 30,
+            content_ids: vec![100, 200, 300],
+        })
+        .await
+        .unwrap();
+    info!("recall resp ={:?}", recall_resp);
     Ok(())
 }

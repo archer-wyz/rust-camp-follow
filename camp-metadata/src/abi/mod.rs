@@ -12,8 +12,7 @@ use tonic::{Request, Response, Status, Streaming};
 use tracing::info;
 
 use crate::pb::metadata::{
-    metadata_server::Metadata, Content, ContentType, MaterializeRequest, MaterializeResponse,
-    Publisher,
+    metadata_server::Metadata, Content, ContentType, MaterializeRequest, Publisher,
 };
 
 impl Dummy<Faker> for Publisher {
@@ -62,7 +61,7 @@ impl Dummy<Faker> for Content {
 pub struct MetadataGRPC;
 
 type ServiceResult<T> = Result<Response<T>, Status>;
-type ResponseStream = Pin<Box<dyn Stream<Item = Result<MaterializeResponse, Status>> + Send>>;
+type ResponseStream = Pin<Box<dyn Stream<Item = Result<Content, Status>> + Send>>;
 
 #[tonic::async_trait]
 impl Metadata for MetadataGRPC {
@@ -79,12 +78,10 @@ impl Metadata for MetadataGRPC {
             while let Some(req) = stream.next().await {
                 let req = req.unwrap();
                 info!("req: {:?}", req);
-                let resp = MaterializeResponse {
-                    id: req.id,
-                    content: Some(Faker.fake()),
-                };
-                info!("metadata sending resp {:?}", resp.id);
-                tx.send(Ok(resp)).await.unwrap();
+                let mut content: Content = Faker.fake();
+                content.id = req.id;
+                info!("metadata sending resp {:?}", content.id);
+                tx.send(Ok(content)).await.unwrap();
             }
         });
         let output_stream = ReceiverStream::new(rx);

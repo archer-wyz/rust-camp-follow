@@ -28,9 +28,7 @@ pub struct RecallRequest {
     pub id: ::prost::alloc::string::String,
     #[prost(uint32, tag = "2")]
     pub last_visit_interval: u32,
-    #[prost(uint32, tag = "3")]
-    pub last_watched_interval: u32,
-    #[prost(uint32, repeated, tag = "4")]
+    #[prost(uint32, repeated, tag = "3")]
     pub content_ids: ::prost::alloc::vec::Vec<u32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
